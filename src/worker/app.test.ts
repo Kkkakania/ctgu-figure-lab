@@ -20,19 +20,30 @@ describe('worker api', () => {
     expect((body.templates as unknown[]).length).toBeGreaterThanOrEqual(20)
   })
 
-  it('estimates 5x DeepSeek usage charge', async () => {
-    const { response, body } = await jsonResponse('/api/pricing/estimate', {
-      method: 'POST',
-      body: JSON.stringify({
-        model: 'deepseek-v4-pro',
-        cacheHitInputTokens: 0,
-        cacheMissInputTokens: 10_000,
-        outputTokens: 10_000,
-      }),
-    })
+  it('returns a public charge estimate without supplier pricing details', async () => {
+    const response = await app.request(
+      '/api/pricing/estimate',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          model: 'deepseek-v4-pro',
+          cacheHitInputTokens: 0,
+          cacheMissInputTokens: 10_000,
+          outputTokens: 10_000,
+        }),
+      },
+      {
+        // Production config can set this value as a private Cloudflare secret.
+        // The public response must never reveal it.
+        SERVICE_PRICE_MULTIPLIER: '3',
+      },
+    )
+    const body = (await response.json()) as Record<string, unknown>
 
     expect(response.status).toBe(200)
-    expect(body.chargeCents).toBe(45)
+    expect(body.estimatedChargeCents).toBe(27)
+    expect(body.providerCostCny).toBeUndefined()
+    expect(body.multiplier).toBeUndefined()
   })
 
   it('renders svg figures through the API', async () => {

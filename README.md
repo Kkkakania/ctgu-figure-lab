@@ -7,7 +7,7 @@
 - 中文浅色优先工作台，支持暗色模式。
 - v1 clean-room 图表 registry：20+ 个稳定图表类型。
 - 无 MATLAB 依赖的 SVG 预览渲染器。
-- DeepSeek 官方成本 × 5 的扣费估算。
+- 面向用户的绘图额度消耗预估。
 - 现金余额 / 赠送余额分离的账本逻辑。
 - 首充赠送规则：绑定手机号和邮箱后，100-499.99 元赠送 5%，500-1000 元赠送 10%，封顶 100 元。
 - Cloudflare Worker API：模板列表、价格估算、图表分析、SVG 渲染、充值赠送预览、微信支付/验证码安全配置检查。
@@ -52,6 +52,7 @@ wrangler secret put WECHAT_CERT_SERIAL_NO
 wrangler secret put WECHAT_NOTIFY_URL
 wrangler secret put SMS_SECRET
 wrangler secret put EMAIL_SECRET
+wrangler secret put SERVICE_PRICE_MULTIPLIER
 ```
 
 ## 版权和来源边界

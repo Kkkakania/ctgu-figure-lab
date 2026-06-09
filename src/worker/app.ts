@@ -13,6 +13,7 @@ export type Env = {
   WECHAT_APP_ID?: string
   SMS_SECRET?: string
   EMAIL_SECRET?: string
+  SERVICE_PRICE_MULTIPLIER?: string
   DB?: D1Database
   BUCKET?: R2Bucket
 }
@@ -73,7 +74,15 @@ export function createApp() {
 
   app.post('/api/pricing/estimate', async (c) => {
     const input = pricingSchema.parse(await c.req.json())
-    return c.json(estimateDeepSeekChargeCents(input))
+    const estimate = estimateDeepSeekChargeCents({
+      ...input,
+      serviceMultiplier: parseServiceMultiplier(c.env?.SERVICE_PRICE_MULTIPLIER),
+    })
+    return c.json({
+      estimatedChargeCents: estimate.chargeCents,
+      currency: 'CNY',
+      label: '预计消耗额度',
+    })
   })
 
   app.post('/api/figure/analyze', async (c) => {
@@ -213,6 +222,12 @@ export function createApp() {
   })
 
   return app
+}
+
+function parseServiceMultiplier(raw?: string): number {
+  const value = Number(raw)
+  if (!Number.isFinite(value) || value <= 0 || value > 20) return 1
+  return value
 }
 
 function missingWechatConfig(env?: Env): string[] {

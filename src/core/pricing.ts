@@ -5,6 +5,7 @@ export type DeepSeekUsage = {
   cacheHitInputTokens: number
   cacheMissInputTokens: number
   outputTokens: number
+  serviceMultiplier?: number
 }
 
 export type DeepSeekPrice = {
@@ -32,7 +33,7 @@ export const PRICE_TABLE: Record<DeepSeekModel, DeepSeekPrice> = {
   },
 }
 
-export const PLATFORM_MULTIPLIER = 5
+export const DEFAULT_SERVICE_MULTIPLIER = 1
 
 const MILLION = 1_000_000
 
@@ -48,14 +49,13 @@ export function estimateDeepSeekChargeCents(
 
   const tokenCount =
     usage.cacheHitInputTokens + usage.cacheMissInputTokens + usage.outputTokens
-  const rawChargeCents = Math.ceil(
-    providerCostCny * PLATFORM_MULTIPLIER * 100 - 1e-9,
-  )
+  const multiplier = usage.serviceMultiplier ?? DEFAULT_SERVICE_MULTIPLIER
+  const rawChargeCents = Math.ceil(providerCostCny * multiplier * 100 - 1e-9)
   const chargeCents = tokenCount > 0 ? Math.max(1, rawChargeCents) : 0
 
   return {
     providerCostCny,
-    multiplier: PLATFORM_MULTIPLIER,
+    multiplier,
     chargeCents,
   }
 }

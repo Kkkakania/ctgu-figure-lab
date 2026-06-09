@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import {
   Activity,
-  BadgeCheck,
   BarChart3,
+  CheckCircle2,
   CreditCard,
   Database,
   Download,
@@ -10,7 +10,7 @@ import {
   LineChart,
   MessageCircle,
   Moon,
-  Settings2,
+  Palette,
   ShieldCheck,
   Sparkles,
   Sun,
@@ -83,30 +83,33 @@ function App() {
 
         <nav className="nav-list" aria-label="主导航">
           <a className="active" href="#workspace">
-            <LineChart size={18} /> 绘图工作台
+            <LineChart size={18} /> 工作台
           </a>
           <a href="#wallet">
-            <Wallet size={18} /> API 余额
+            <Wallet size={18} /> 绘图额度
           </a>
           <a href="#quality">
             <ShieldCheck size={18} /> 质量检查
           </a>
           <a href="#support">
-            <MessageCircle size={18} /> 问题反馈
+            <MessageCircle size={18} /> 反馈
           </a>
         </nav>
 
         <section className="side-note">
-          <BadgeCheck size={18} />
-          <p>只做科研绘图和流程图，不做建模解题、论文代写或排版服务。</p>
+          <CheckCircle2 size={18} />
+          <p>专注科研绘图和流程图，输出图片、矢量图与可复现代码。</p>
         </section>
       </aside>
 
       <section className="content">
         <header className="topbar">
           <div>
-            <p className="eyebrow">CTGU · AI Figure Workspace</p>
-            <h1>上传数据，生成可复现的科研图表</h1>
+            <p className="eyebrow">CTGU Figure Workspace</p>
+            <h1>科研图表工作台</h1>
+            <p className="subtitle">
+              上传表格，描述你想表达的关系，系统给出图表建议并生成可导出的预览。
+            </p>
           </div>
           <button
             className="icon-button"
@@ -121,7 +124,7 @@ function App() {
         <section className="status-grid" aria-label="平台状态">
           <MetricCard
             icon={<Wallet size={20} />}
-            label="可用余额"
+            label="可用额度"
             value="¥126.40"
             helper="现金 ¥100.00 · 赠送 ¥26.40"
           />
@@ -129,13 +132,13 @@ function App() {
             icon={<Activity size={20} />}
             label="本次预估"
             value={`¥${(charge.chargeCents / 100).toFixed(2)}`}
-            helper="按 DeepSeek 官方成本 × 5"
+            helper="预计消耗绘图额度"
           />
           <MetricCard
             icon={<Database size={20} />}
             label="模板库"
             value={`${CORE_TEMPLATES.length} 个`}
-            helper="v1 stable clean-room 模板"
+            helper="稳定科研图表模板"
           />
         </section>
 
@@ -145,19 +148,19 @@ function App() {
               <FileSpreadsheet size={20} />
               <div>
                 <h2>数据与需求</h2>
-                <p>CSV/XLSX 优先，Word/PDF 后续作为资料解析增强。</p>
+                <p>CSV/XLSX 优先，后续再增强 Word/PDF 资料解析。</p>
               </div>
             </div>
 
             <label className="upload-box">
-              <Upload size={24} />
+              <Upload size={23} />
               <strong>拖入表格或点击上传</strong>
               <span>v1 限制 10MB 内，默认 7 天自动清理</span>
               <input type="file" accept=".csv,.xlsx" />
             </label>
 
             <label className="field-label" htmlFor="intent">
-              你想让这张图说明什么？
+              这张图要说明什么？
             </label>
             <textarea
               id="intent"
@@ -185,12 +188,15 @@ function App() {
           </div>
 
           <div className="panel preview-panel">
-            <div className="panel-heading">
-              <Sparkles size={20} />
-              <div>
-                <h2>图表预览</h2>
-                <p>当前使用 {selectedTemplate}，导出默认白底。</p>
+            <div className="panel-heading split">
+              <div className="heading-inline">
+                <Sparkles size={20} />
+                <div>
+                  <h2>图表预览</h2>
+                  <p>当前模板：{selectedTemplate}</p>
+                </div>
               </div>
+              <span className="preview-badge">白底导出</span>
             </div>
 
             <div
@@ -200,13 +206,13 @@ function App() {
 
             <div className="preview-actions">
               <button type="button">
-                <Download size={17} /> 导出 SVG
+                <Download size={17} /> SVG
               </button>
               <button type="button">
-                <Download size={17} /> 导出 PNG
+                <Download size={17} /> PNG
               </button>
               <button type="button">
-                <Settings2 size={17} /> 调整参数
+                <Palette size={17} /> 样式
               </button>
             </div>
           </div>
@@ -217,12 +223,12 @@ function App() {
             <div className="panel-heading">
               <CreditCard size={20} />
               <div>
-                <h2>微信充值与赠送</h2>
-                <p>真实入账只接受微信支付验签回调。</p>
+                <h2>充值与赠送</h2>
+                <p>支付接入完成前，先用于产品演示。</p>
               </div>
             </div>
             <div className="topup-row">
-              <span>自定义充值</span>
+              <span>充值金额</span>
               <input
                 min={10}
                 max={1000}
@@ -233,11 +239,11 @@ function App() {
               <span>元</span>
             </div>
             <p className="bonus-line">
-              手机号和邮箱都绑定后，首充预计赠送{' '}
+              绑定手机号和邮箱后，首充预计赠送{' '}
               <strong>¥{(bonusCents / 100).toFixed(2)}</strong>
             </p>
             <button className="primary-button" type="button">
-              生成微信支付二维码
+              生成充值订单
             </button>
           </div>
 
@@ -245,8 +251,8 @@ function App() {
             <div className="panel-heading">
               <BarChart3 size={20} />
               <div>
-                <h2>Usage 明细</h2>
-                <p>用户能看到每次生成的 token、倍率和扣费。</p>
+                <h2>用量明细</h2>
+                <p>每次生成都会记录消耗、时间和导出结果。</p>
               </div>
             </div>
             <div className="usage-chart">
@@ -266,15 +272,15 @@ function App() {
             <div className="panel-heading">
               <ShieldCheck size={20} />
               <div>
-                <h2>上线前硬规则</h2>
-                <p>防止版权、隐私和账单事故。</p>
+                <h2>上线前规则</h2>
+                <p>先把风险挡在发布前。</p>
               </div>
             </div>
             <ul className="check-list">
               <li>不发布 Akun 原始文件或去署名版本</li>
-              <li>不输出手机号、邮箱、支付密钥到日志</li>
-              <li>余额只由微信验签回调或后台审计操作改变</li>
-              <li>单任务有最高扣费上限，失败不重复扣费</li>
+              <li>不把手机号、邮箱、密钥写入日志</li>
+              <li>余额只由验签回调或审计操作改变</li>
+              <li>失败任务不重复扣费</li>
             </ul>
           </div>
         </section>
