@@ -18,11 +18,5 @@
       "database_name": "ctgu_figure_lab",
       "database_id": "2d079558-4daa-4302-8038-48b3c425ca51"
     }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "BUCKET",
-      "bucket_name": "ctgu-figure-lab-files"
-    }
   ]
 }

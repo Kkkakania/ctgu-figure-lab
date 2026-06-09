@@ -36,7 +36,7 @@ npm run audit:plot-library
 - Wrangler 配置：`wrangler.jsonc`
 - D1 migration：`migrations/0001_initial.sql`
 
-真实部署前需要创建 D1 数据库和 R2 bucket，并把 `wrangler.jsonc` 中的 `database_id` 替换为真实值。
+真实部署前需要创建 D1 数据库，并把 `wrangler.jsonc` 中的 `database_id` 替换为真实值。R2 文件存储已预留在架构中，但当前 Cloudflare 账号还未启用 R2，v1 先不绑定 R2，避免部署被阻塞。
 
 ## 必需密钥
 
@@ -66,7 +66,7 @@ wrangler secret put EMAIL_SECRET
 
 ## 下一步
 
-1. 配置 Cloudflare D1/R2。
+1. 配置 Cloudflare D1；启用 R2 后再接文件存储。
 2. 接入微信支付 API v3 签名、下单、回调验签。
 3. 接入邮箱和短信验证码服务。
 4. 把前端按钮接到真实 `/api/*`。
