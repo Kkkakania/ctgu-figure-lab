@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Activity,
   Bot,
@@ -49,6 +49,12 @@ const usageData = [
 
 const sessionSteps = ['上传数据', '选择图表', '生成代码', '导出图像']
 
+const qualitySignals = [
+  { label: '隐私清理', value: '启用' },
+  { label: '白底导出', value: 'SVG' },
+  { label: '模板来源', value: 'clean-room' },
+]
+
 const recentJobs = [
   { name: '电压波形对比', type: 'SVG', status: '已导出' },
   { name: '回归关系图', type: 'PNG', status: '可复用' },
@@ -71,6 +77,7 @@ function App() {
   )
   const [selectedTemplate, setSelectedTemplate] = useState('line_basic')
   const [topupYuan, setTopupYuan] = useState(100)
+  const [commandOpen, setCommandOpen] = useState(false)
 
   const recommendations = useMemo(() => recommendTemplates(intent), [intent])
   const charge = estimateDeepSeekChargeCents({
@@ -93,6 +100,49 @@ function App() {
     rows: sampleRows,
   })
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandOpen((value) => !value)
+      }
+      if (event.key === 'Escape') {
+        setCommandOpen(false)
+      }
+      if (commandOpen && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        const key = event.key.toLowerCase()
+        if (key === 'p') {
+          setArtifactTab('preview')
+          setCommandOpen(false)
+        }
+        if (key === 'c') {
+          setArtifactTab('code')
+          setCommandOpen(false)
+        }
+        if (key === 's') {
+          setArtifactTab('settings')
+          setCommandOpen(false)
+        }
+        if (key === 'b') {
+          setArtifactTab('billing')
+          setCommandOpen(false)
+        }
+        if (key === 't') {
+          setDarkMode((value) => !value)
+          setCommandOpen(false)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [commandOpen])
+
+  const runCommand = (action: () => void) => {
+    action()
+    setCommandOpen(false)
+  }
+
   return (
     <main className={darkMode ? 'app app-dark' : 'app'}>
       <aside className="sidebar">
@@ -114,13 +164,13 @@ function App() {
           <a className="active" href="#workspace">
             <LineChart size={18} /> 对话工作台
           </a>
-          <a href="#artifact">
+          <a href="#artifact" onClick={() => setArtifactTab('preview')}>
             <Sparkles size={18} /> 输出面板
           </a>
-          <a href="#wallet">
+          <a href="#wallet" onClick={() => setArtifactTab('billing')}>
             <Wallet size={18} /> 余额充值
           </a>
-          <a href="#quality">
+          <a href="#quality" onClick={() => setArtifactTab('settings')}>
             <ShieldCheck size={18} /> 安全规则
           </a>
         </nav>
@@ -154,11 +204,17 @@ function App() {
             <ChevronRight size={14} />
             <strong>AI Figure Workspace</strong>
           </div>
-          <label className="command-bar" aria-label="搜索任务、模板和代码">
+          <button
+            className="command-bar"
+            type="button"
+            aria-expanded={commandOpen}
+            aria-label="打开命令面板"
+            onClick={() => setCommandOpen(true)}
+          >
             <Search size={16} />
             <span>搜索任务、模板、代码或输入命令</span>
             <kbd>⌘K</kbd>
-          </label>
+          </button>
           <div className="top-actions">
             <button className="balance-pill" type="button" onClick={() => setArtifactTab('billing')}>
               <Wallet size={16} /> ¥126.40
@@ -249,6 +305,15 @@ function App() {
                   </p>
                 </div>
               </article>
+
+              <div className="quality-strip" aria-label="输出质量状态">
+                {qualitySignals.map((signal) => (
+                  <div key={signal.label}>
+                    <span>{signal.label}</span>
+                    <strong>{signal.value}</strong>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="composer">
@@ -268,7 +333,10 @@ function App() {
                 <span>输出</span>
                 <strong>Figure artifact</strong>
               </div>
-              <div className="artifact-status">白底 · SVG</div>
+              <div className="artifact-status">
+                <span />
+                白底 · SVG
+              </div>
             </div>
 
             <div className="artifact-tabs" role="tablist" aria-label="输出视图">
@@ -375,6 +443,60 @@ function App() {
           </aside>
         </div>
       </section>
+
+      {commandOpen && (
+        <div className="command-overlay" role="dialog" aria-modal="true" aria-label="命令面板">
+          <div className="command-modal">
+            <div className="command-modal-head">
+              <Search size={17} />
+              <span>输入命令或快速跳转</span>
+              <kbd>Esc</kbd>
+            </div>
+            <div className="command-groups">
+              <button type="button" onClick={() => runCommand(() => setArtifactTab('preview'))}>
+                <Sparkles size={17} />
+                <span>
+                  查看当前图表预览
+                  <small>打开右侧 artifact 的预览视图</small>
+                </span>
+                <kbd>P</kbd>
+              </button>
+              <button type="button" onClick={() => runCommand(() => setArtifactTab('code'))}>
+                <Code2 size={17} />
+                <span>
+                  打开可复现代码
+                  <small>检查 MATLAB exportgraphics 输出</small>
+                </span>
+                <kbd>C</kbd>
+              </button>
+              <button type="button" onClick={() => runCommand(() => setArtifactTab('settings'))}>
+                <Settings size={17} />
+                <span>
+                  调整导出设置
+                  <small>背景、格式、隐私清理和模板状态</small>
+                </span>
+                <kbd>S</kbd>
+              </button>
+              <button type="button" onClick={() => runCommand(() => setArtifactTab('billing'))}>
+                <Wallet size={17} />
+                <span>
+                  查看余额与充值
+                  <small>充值、赠送规则和验证码限制</small>
+                </span>
+                <kbd>B</kbd>
+              </button>
+              <button type="button" onClick={() => runCommand(() => setDarkMode((value) => !value))}>
+                {darkMode ? <Sun size={17} /> : <Moon size={17} />}
+                <span>
+                  切换明暗主题
+                  <small>科研浅色与深色工作台</small>
+                </span>
+                <kbd>T</kbd>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
