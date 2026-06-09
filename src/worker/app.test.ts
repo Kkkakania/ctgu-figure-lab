@@ -97,4 +97,38 @@ describe('worker api', () => {
     expect(response.status).toBe(503)
     expect(body.error).toBe('email_not_configured')
   })
+
+  it('reports the exact Tencent SMS config required for phone verification', async () => {
+    const { response, body } = await jsonResponse('/api/auth/phone-code', {
+      method: 'POST',
+      body: JSON.stringify({ phone: '13800138000' }),
+    })
+
+    expect(response.status).toBe(503)
+    expect(body.error).toBe('tencent_sms_not_configured')
+    expect(body.missing).toContain('TENCENTCLOUD_SECRET_ID')
+    expect(body.missing).toContain('TENCENT_SMS_TEMPLATE_ID')
+  })
+
+  it('does not send SMS until the Tencent sender is implemented', async () => {
+    const response = await app.request(
+      '/api/auth/phone-code',
+      {
+        method: 'POST',
+        body: JSON.stringify({ phone: '13800138000' }),
+      },
+      {
+        TENCENTCLOUD_SECRET_ID: 'secret-id',
+        TENCENTCLOUD_SECRET_KEY: 'secret-key',
+        TENCENT_SMS_REGION: 'ap-guangzhou',
+        TENCENT_SMS_SDK_APP_ID: '1400000000',
+        TENCENT_SMS_SIGN_NAME: '三峡科研绘图',
+        TENCENT_SMS_TEMPLATE_ID: '123456',
+      },
+    )
+    const body = (await response.json()) as Record<string, unknown>
+
+    expect(response.status).toBe(501)
+    expect(body.error).toBe('sms_sender_not_enabled')
+  })
 })

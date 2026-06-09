@@ -11,7 +11,12 @@ export type Env = {
   WECHAT_API_V3_KEY?: string
   WECHAT_PRIVATE_KEY?: string
   WECHAT_APP_ID?: string
-  SMS_SECRET?: string
+  TENCENTCLOUD_SECRET_ID?: string
+  TENCENTCLOUD_SECRET_KEY?: string
+  TENCENT_SMS_REGION?: string
+  TENCENT_SMS_SDK_APP_ID?: string
+  TENCENT_SMS_SIGN_NAME?: string
+  TENCENT_SMS_TEMPLATE_ID?: string
   EMAIL_SECRET?: string
   SERVICE_PRICE_MULTIPLIER?: string
   DB?: D1Database
@@ -170,12 +175,15 @@ export function createApp() {
 
   app.post('/api/auth/phone-code', async (c) => {
     phoneCodeSchema.parse(await c.req.json())
+    const missing = missingTencentSmsConfig(c.env)
 
-    if (!c.env?.SMS_SECRET) {
+    if (missing.length > 0) {
       return c.json(
         {
-          error: 'sms_not_configured',
-          message: '需要配置短信服务密钥后才能发送手机验证码。',
+          error: 'tencent_sms_not_configured',
+          missing,
+          message:
+            '需要在 Cloudflare Secrets 中配置腾讯云短信 SecretId、SecretKey、SmsSdkAppId、签名、模板 ID 和 Region 后才能发送手机验证码。',
         },
         503,
       )
@@ -222,6 +230,19 @@ export function createApp() {
   })
 
   return app
+}
+
+function missingTencentSmsConfig(env?: Env): string[] {
+  const required: Array<keyof Env> = [
+    'TENCENTCLOUD_SECRET_ID',
+    'TENCENTCLOUD_SECRET_KEY',
+    'TENCENT_SMS_REGION',
+    'TENCENT_SMS_SDK_APP_ID',
+    'TENCENT_SMS_SIGN_NAME',
+    'TENCENT_SMS_TEMPLATE_ID',
+  ]
+
+  return required.filter((key) => !env?.[key])
 }
 
 function parseServiceMultiplier(raw?: string): number {
