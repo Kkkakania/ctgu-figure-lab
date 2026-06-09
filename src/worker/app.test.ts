@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { createApp } from './app'
 
 const app = createApp()
+const completeSmsEnv = {
+  TENCENTCLOUD_SECRET_ID: 'secret-id',
+  TENCENTCLOUD_SECRET_KEY: 'secret-key',
+  TENCENT_SMS_REGION: 'ap-guangzhou',
+  TENCENT_SMS_SDK_APP_ID: '1400000000',
+  TENCENT_SMS_SIGN_NAME: '三峡科研绘图',
+  TENCENT_SMS_TEMPLATE_ID: '123456',
+}
 
 async function jsonResponse(path: string, init?: RequestInit) {
   const response = await app.request(path, init)
@@ -118,12 +126,8 @@ describe('worker api', () => {
         body: JSON.stringify({ phone: '13800138000' }),
       },
       {
-        TENCENTCLOUD_SECRET_ID: 'secret-id',
-        TENCENTCLOUD_SECRET_KEY: 'secret-key',
-        TENCENT_SMS_REGION: 'ap-guangzhou',
-        TENCENT_SMS_SDK_APP_ID: '1400000000',
-        TENCENT_SMS_SIGN_NAME: '三峡科研绘图',
-        TENCENT_SMS_TEMPLATE_ID: '123456',
+        ...completeSmsEnv,
+        DB: fakeD1WithPhoneCodeCount(0),
       },
     )
     const body = (await response.json()) as Record<string, unknown>
@@ -131,4 +135,48 @@ describe('worker api', () => {
     expect(response.status).toBe(501)
     expect(body.error).toBe('sms_sender_not_enabled')
   })
+
+  it('requires D1 before phone verification can be enabled', async () => {
+    const response = await app.request(
+      '/api/auth/phone-code',
+      {
+        method: 'POST',
+        body: JSON.stringify({ phone: '13800138000' }),
+      },
+      completeSmsEnv,
+    )
+    const body = (await response.json()) as Record<string, unknown>
+
+    expect(response.status).toBe(503)
+    expect(body.error).toBe('phone_verification_store_not_configured')
+  })
+
+  it('limits each phone number to three verification requests per Beijing day', async () => {
+    const response = await app.request(
+      '/api/auth/phone-code',
+      {
+        method: 'POST',
+        body: JSON.stringify({ phone: '13800138000' }),
+      },
+      {
+        ...completeSmsEnv,
+        DB: fakeD1WithPhoneCodeCount(3),
+      },
+    )
+    const body = (await response.json()) as Record<string, unknown>
+
+    expect(response.status).toBe(429)
+    expect(body.error).toBe('phone_code_daily_limit_exceeded')
+    expect(body.limit).toBe(3)
+  })
 })
+
+function fakeD1WithPhoneCodeCount(count: number): D1Database {
+  return {
+    prepare: () => ({
+      bind: () => ({
+        first: async () => ({ count }),
+      }),
+    }),
+  } as unknown as D1Database
+}

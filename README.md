@@ -10,6 +10,7 @@
 - 面向用户的绘图额度消耗预估。
 - 现金余额 / 赠送余额分离的账本逻辑。
 - 首充赠送规则：绑定手机号和邮箱后，100-499.99 元赠送 5%，500-1000 元赠送 10%，封顶 100 元。
+- 手机验证码成本保护：同一手机号按北京时间自然日最多 3 次。
 - Cloudflare Worker API：模板列表、价格估算、图表分析、SVG 渲染、充值赠送预览、微信支付/验证码安全配置检查。
 - 只读审计本地 `科研绘图_函数库` 的脚本，不修改 `17 akun`。
 
@@ -50,7 +51,13 @@ wrangler secret put WECHAT_API_V3_KEY
 wrangler secret put WECHAT_PRIVATE_KEY
 wrangler secret put WECHAT_CERT_SERIAL_NO
 wrangler secret put WECHAT_NOTIFY_URL
-wrangler secret put SMS_SECRET
+wrangler secret put TENCENTCLOUD_SECRET_ID
+wrangler secret put TENCENTCLOUD_SECRET_KEY
+wrangler secret put TENCENT_SMS_REGION
+wrangler secret put TENCENT_SMS_SDK_APP_ID
+wrangler secret put TENCENT_SMS_SIGN_NAME
+wrangler secret put TENCENT_SMS_TEMPLATE_ID
+wrangler secret put VERIFICATION_HASH_SECRET
 wrangler secret put EMAIL_SECRET
 wrangler secret put SERVICE_PRICE_MULTIPLIER
 ```

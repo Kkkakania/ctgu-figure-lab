@@ -281,7 +281,7 @@ function App() {
                     充值 <ChevronRight size={16} />
                   </button>
                 </div>
-                <p>绑定手机号和邮箱后，首充预计赠送 ¥{(bonusCents / 100).toFixed(2)}</p>
+                <p>绑定手机号和邮箱后，首充预计赠送 ¥{(bonusCents / 100).toFixed(2)}。同一手机号每天最多 3 次验证码。</p>
               </div>
             </div>
 

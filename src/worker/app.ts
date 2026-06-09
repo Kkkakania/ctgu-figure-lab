@@ -17,7 +17,9 @@ export type Env = {
   TENCENT_SMS_SDK_APP_ID?: string
   TENCENT_SMS_SIGN_NAME?: string
   TENCENT_SMS_TEMPLATE_ID?: string
+  PHONE_CODE_DAILY_LIMIT?: string
   EMAIL_SECRET?: string
+  VERIFICATION_HASH_SECRET?: string
   SERVICE_PRICE_MULTIPLIER?: string
   DB?: D1Database
   BUCKET?: R2Bucket
@@ -174,7 +176,7 @@ export function createApp() {
   })
 
   app.post('/api/auth/phone-code', async (c) => {
-    phoneCodeSchema.parse(await c.req.json())
+    const input = phoneCodeSchema.parse(await c.req.json())
     const missing = missingTencentSmsConfig(c.env)
 
     if (missing.length > 0) {
@@ -186,6 +188,36 @@ export function createApp() {
             '需要在 Cloudflare Secrets 中配置腾讯云短信 SecretId、SecretKey、SmsSdkAppId、签名、模板 ID 和 Region 后才能发送手机验证码。',
         },
         503,
+      )
+    }
+
+    if (!c.env?.DB) {
+      return c.json(
+        {
+          error: 'phone_verification_store_not_configured',
+          message: '需要绑定 D1 数据库后才能启用手机验证码限频和发送。',
+        },
+        503,
+      )
+    }
+
+    const dailyLimit = parseDailyLimit(c.env.PHONE_CODE_DAILY_LIMIT)
+    const targetHash = await hashTarget(
+      'phone',
+      input.phone,
+      c.env.VERIFICATION_HASH_SECRET ?? c.env.TENCENTCLOUD_SECRET_KEY,
+    )
+    const today = beijingDate(new Date())
+    const count = await countPhoneCodeRequests(c.env.DB, targetHash, today)
+
+    if (count >= dailyLimit) {
+      return c.json(
+        {
+          error: 'phone_code_daily_limit_exceeded',
+          limit: dailyLimit,
+          message: `同一手机号每天最多发送 ${dailyLimit} 次验证码，请明天再试。`,
+        },
+        429,
       )
     }
 
@@ -230,6 +262,50 @@ export function createApp() {
   })
 
   return app
+}
+
+async function countPhoneCodeRequests(
+  db: D1Database,
+  targetHash: string,
+  beijingDateText: string,
+): Promise<number> {
+  const row = await db
+    .prepare(
+      `
+        SELECT COUNT(*) AS count
+        FROM auth_codes
+        WHERE channel = 'phone'
+          AND target_hash = ?
+          AND date(datetime(created_at, '+8 hours')) = ?
+      `,
+    )
+    .bind(targetHash, beijingDateText)
+    .first<{ count: number }>()
+
+  return Number(row?.count ?? 0)
+}
+
+async function hashTarget(channel: string, target: string, secret?: string): Promise<string> {
+  const data = new TextEncoder().encode(`${secret ?? 'ctgu-figure-lab'}:${channel}:${target}`)
+  const digest = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function beijingDate(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
+function parseDailyLimit(raw?: string): number {
+  const value = Number(raw)
+  if (!Number.isInteger(value) || value < 1 || value > 20) return 3
+  return value
 }
 
 function missingTencentSmsConfig(env?: Env): string[] {
