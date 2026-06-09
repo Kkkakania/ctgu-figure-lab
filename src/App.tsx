@@ -47,6 +47,8 @@ const usageData = [
   { day: '日', cost: 55 },
 ]
 
+const sessionSteps = ['上传数据', '选择图表', '生成代码', '导出图像']
+
 const recentJobs = [
   { name: '电压波形对比', type: 'SVG', status: '已导出' },
   { name: '回归关系图', type: 'PNG', status: '可复用' },
@@ -152,12 +154,14 @@ function App() {
             <ChevronRight size={14} />
             <strong>AI Figure Workspace</strong>
           </div>
+          <label className="command-bar" aria-label="搜索任务、模板和代码">
+            <Search size={16} />
+            <span>搜索任务、模板、代码或输入命令</span>
+            <kbd>⌘K</kbd>
+          </label>
           <div className="top-actions">
             <button className="balance-pill" type="button" onClick={() => setArtifactTab('billing')}>
               <Wallet size={16} /> ¥126.40
-            </button>
-            <button type="button">
-              <Search size={16} /> 搜索
             </button>
             <button type="button" onClick={() => setArtifactTab('settings')}>
               <Settings size={16} /> 设置
@@ -175,6 +179,13 @@ function App() {
                 <p>只做科研绘图与流程图</p>
                 <h1>把数据变成可交付图表</h1>
                 <span>左侧持续对话，右侧实时沉淀预览、代码、参数和余额。</span>
+                <div className="session-strip" aria-label="当前绘图流程">
+                  {sessionSteps.map((step, index) => (
+                    <em className={index < 2 ? 'done' : ''} key={step}>
+                      {index + 1}. {step}
+                    </em>
+                  ))}
+                </div>
               </div>
 
               <article className="turn turn-user">
@@ -277,7 +288,22 @@ function App() {
 
             <div className="artifact-body">
               {artifactTab === 'preview' && (
-                <div className="preview-surface" dangerouslySetInnerHTML={{ __html: previewSvg }} />
+                <div className="preview-stage">
+                  <div className="canvas-window">
+                    <div className="canvas-toolbar">
+                      <span>figure.svg</span>
+                      <small>v1 · clean-room · 论文白底</small>
+                    </div>
+                    <div className="preview-surface" dangerouslySetInnerHTML={{ __html: previewSvg }} />
+                  </div>
+                  <div className="artifact-dock">
+                    <div>
+                      <Code2 size={16} />
+                      <span>MATLAB 代码已同步</span>
+                    </div>
+                    <code>exportgraphics(gcf, 'figure.svg')</code>
+                  </div>
+                </div>
               )}
 
               {artifactTab === 'code' && (
